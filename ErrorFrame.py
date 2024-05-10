@@ -1,4 +1,4 @@
-from PCANBasic imprt *
+from PCANBasic import *
 import os 
 import sys
 
@@ -6,70 +6,62 @@ PcanHandle = PCAN_USBBUS1
 
 Bitrate = PCAN_BAUD_500K
 
-IsFD = False
+objPCAN = PCANBasic()
 
-BitrateFD = b'f_clock_mhz=20, nom_brp=5, nom_tseg1=2, nom_tseg2=1, nom_sjw=1, data_brp=2, data_tseg1=3, data_tseg2=1, data_sjw=1'
-
-# m_DLLFound = False
-
-PcanInstance = PCANBasic()
+result = objPCAN.Initialize(PcanHandle, Bitrate)
 
 
- if IsFD:
-    stsResult = PcanInstance.InitializeFD(PcanHandle, BitrateFD)
+
+
+def convertString(data):
+    strTemp = b""
+    for x in data:
+        strTemp += b'%.2X ' % x
+    return str(strTemp).replace("'","",2).replace("b","",1)
+
+
+
+
+if result != PCAN_ERROR_OK:
+    result = objPCAN.GetErrorText(result)
+    print(result[1])
 else:
-    stsResult = PcanInstance.Initialize(PcanHandle, Bitrate)
-if stsResult != PCAN_ERROR_OK:
-    print("Can not initialize. Please check the defines in the code.")
+    print("PCAN-USB (ch. 1) initialized")
 
-def ReadMessage():
-        """
-        Function for reading CAN messages on normal CAN devices
 
-        Returns:
-            A TPCANStatus error code
-        """
-        ## We execute the "Read" function of the PCANBasic   
-        stsResult = PcanInstance.Read(PcanHandle)
+readResult = PCAN_ERROR_OK
 
-        if stsResult[0] == PCAN_ERROR_OK:
-            ## We show the received message
-            ProcessMessageCan(stsResult[1],stsResult[2])
-            print(stsResult)
-            
-        return stsResult[0]
-def ReadMessages():
-    """
-    Function for reading PCAN-Basic messages
-    """
-    stsResult = PCAN_ERROR_OK
+while (not(PCAN_ERROR_OK & PCAN_ERROR_QRCVEMPTY)):
+    # Check the receive queue for new messages
+    #
+    readResult = objPCAN.Read(PCAN_USBBUS1)
+    if readResult != PCAN_ERROR_QRCVEMPTY and readResult[0] == PCAN_ERROR_OK:
+        # Process the received message
+        #
+        pgn = readResult[1].ID
+        data = readResult[1].DATA
+        timeStamp = readResult[2]
+        print(timeStamp)
+        microsTimeStamp = timeStamp.micros + (1000 * timeStamp.millis) + (0x100000000 * 1000 * timeStamp.millis_overflow)
+        print(" A message was received")
+        print("ID: ",'%.8Xh' %pgn) # Possible processing function, ProcessMessage(msg,timestamp)
+        convertedData = convertString(data)
+        print("Data: ", convertedData)
+        print("Timestamp: ", microsTimeStamp)
+        print("================================================")
+    else:
+        # An error occurred, get a text describing the error and show it
+        #
+        result = objPCAN.GetErrorText(readResult[0])
+        # print(result[1])
+        # print(readResult[0]) # Possible errors handling function, HandleError(function_result)
 
-    ## We read at least one time the queue looking for messages. If a message is found, we look again trying to 
-    ## find more. If the queue is empty or an error occurr, we get out from the dowhile statement.
-    while (not (stsResult & PCAN_ERROR_QRCVEMPTY)):
-        if IsFD:
-            stsResult = ReadMessageFD()
-        else:
-            stsResult = ReadMessage()
-        if stsResult != PCAN_ERROR_OK and stsResult != PCAN_ERROR_QRCVEMPTY:
-            ShowStatus(stsResult)
-            return
+result = objPCAN.Uninitialize(PCAN_USBBUS1)
+if result != PCAN_ERROR_OK:
+    # An error occurred, get a text describing the error and show it
+    #
+    result = objPCAN.GetErrorText(result)
+    print("Error:", result[1])
+else:
+    print("PCAN-USB (Ch-1) was released")
 
- def ProcessMessageCan(msg,itstimestamp):
-         """
-         Processes a received CAN message
-         
-         Parameters:
-             msg = The received PCAN-Basic CAN message
-             itstimestamp = Timestamp of the message as TPCANTimestamp structure
-         """
-         microsTimeStamp = itstimestamp.micros + (1000 * itstimestamp.millis) + (0x100000000 * 1000 * itstimestamp.millis_overflow)
-         
-        #  print("Type: " + GetTypeString(msg.MSGTYPE))
-        #  print("ID: " + GetIdString(msg.ID, msg.MSGTYPE))
-        #  print("Length: " + str(msg.LEN))
-        #  print("Time: " + GetTimeString(microsTimeStamp))
-        #  print("Data: " + GetDataString(msg.DATA,msg.MSGTYPE))
-         print("----------------------------------------------------------")
-
-ReadMessages()
