@@ -13,7 +13,7 @@ from hashlib import sha256
 
 
 #HW Interface
-bus = can.Bus(bustype='vector', app_name=None, channel=[0], bitrate=500000, err_reporting=True)           #Vector HW interface
+bus = can.Bus(bustype='vector', app_name=None, channel=[0], bitrate=500000, err_reporting = True)           #Vector HW interface
 # bus = can.Bus(bustype='pcan', app_name=None, channel='PCAN_USBBUS1', bitrate=500000)     #PCAN HW interface 
 
 # def send_message(): #this is to send messages periodically
@@ -29,10 +29,6 @@ def send_single_message(message_ID, L_data):
     message = can.Message(arbitration_id = message_ID, data= L_data, is_extended_id=True, channel=0)
     bus.send(message)
     print("------------------------------------------------------")
-
-
-# Test Comment
-# Test Comment 2
 
 
 
@@ -146,23 +142,22 @@ def error_check():
         print(err_frames_sec, "fr/s")
         print("total: ", err_counter)
 
+# Busload Tester for 500K Baud Rate
+# j1939_busload(can.Bus() object, int eval_time in seconds)
+def j1939_busload(can_bus,evaluation_time):
+    # On average there are 145 bits in a J1939 message (incl. stuff bits)
+    j1939_avg_bits_per_message = 145
+    msg_count = 0
+    init_time = time.monotonic()
+    # Count Messages for a given amount of time
+    while(time.monotonic() - init_time <= evaluation_time):
+        for msg in can_bus:
+            msg_count += 1
+    # Evaluate busload. Busload = (Bits per second / 500000) * 100 %
+    rx_bits = j1939_avg_bits_per_message * msg_count
+    rx_bits_per_sec = (rx_bits/evaluation_time)
+    return (rx_bits_per_sec/500000) * 100
 
-
-
-
-        
-    
-
-
-   
-   
-    
-    
-
-    
-
-
-    
 
 
 if __name__ == "__main__":
