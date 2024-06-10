@@ -31,14 +31,14 @@ other_error = 8
 objPCAN.SetValue(PcanHandle, PCAN_ALLOW_ERROR_FRAMES, PCAN_PARAMETER_ON)
 objPCAN.SetValue(PcanHandle, PCAN_LISTEN_ONLY, PCAN_PARAMETER_ON)
 
-
+#check for errors
 if result != PCAN_ERROR_OK:
     result = objPCAN.GetErrorText(result)
     print(result[1])
 else:
     print("PCAN-USB (ch. 1) initialized")
     print("Running Error check test. Please wait.....")
-    start_time = time.time()
+    start_time = time.time()    # Get initial time
 
 
 readResult = PCAN_ERROR_OK
@@ -54,17 +54,7 @@ def error_test:
         current_time = time.time()
         readResult = objPCAN.Read(PCAN_USBBUS1)
         
-        if readResult != PCAN_ERROR_QRCVEMPTY and readResult[0] == PCAN_ERROR_OK:
-            
-            # Run once to get initial timestamp
-            # while x < 1:
-            #     timeStamp = readResult[2]
-            #     microsTimeStamp = (timeStamp.micros + (1000 * timeStamp.millis) + (0x100000000 * 1000 * timeStamp.millis_overflow))/1000000
-            #     initial_time = microsTimeStamp
-            #     x += 1
-            # Process the received message
-            # print(readResult[1].ID)
-            
+        if readResult != PCAN_ERROR_QRCVEMPTY and readResult[0] == PCAN_ERROR_OK:           
             if readResult[1].ID == bit_error:
                 Bit_error_count += 1
             elif readResult[1].ID == form_error:
@@ -76,11 +66,11 @@ def error_test:
             # print("this is the ID", readResult[1].ID)
             if readResult[1].ID == bit_error or readResult[1].ID == form_error or readResult[1].ID == stuff_error or readResult[1].ID == other_error:
                 Total_errors +=1
-            pgn = readResult[1].ID
-            data = readResult[1].DATA
-            timeStamp = readResult[2]
+            # pgn = readResult[1].ID
+            # data = readResult[1].DATA
+            # timeStamp = readResult[2]
             # print(timeStamp)
-            microsTimeStamp = (timeStamp.micros + (1000 * timeStamp.millis) + (0x100000000 * 1000 * timeStamp.millis_overflow))/1000000
+            # microsTimeStamp = (timeStamp.micros + (1000 * timeStamp.millis) + (0x100000000 * 1000 * timeStamp.millis_overflow))/1000000
             # elapsed_time = microsTimeStamp - initial_time
             elapsed_time = current_time - start_time
             # print("elapsed time: ",elapsed_time)
