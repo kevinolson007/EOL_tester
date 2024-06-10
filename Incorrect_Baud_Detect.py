@@ -1,4 +1,4 @@
-from pcan.PCANBasic import *
+from Lib.pcan.PCANBasic import *
 import time
 
 # region PCAN System Definition
