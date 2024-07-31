@@ -1,7 +1,8 @@
-from pcan.PCANBasic import *
+# from pcan.PCANBasic import *
 import tkinter as tk
 from tkinter import ttk
 import time
+import threading
 
 # Data to be collected for Database
 vehicle_vin = 0
@@ -32,10 +33,12 @@ dinex_can = ttk.Frame(can_tab_control)
 
 can_tab_control.add(pri_can, text = "Primary CAN")
 can_tab_control.add(dinex_can, text = "DINEX CAN")
-############ ADD NEW TABS HERE IF NEEDED ####################
+## ADD NEW TABS HERE IF NEEDED ##
 window.grid_rowconfigure(2,weight=12)
 window.grid_columnconfigure(2,weight=1)
 can_tab_control.grid(row=2,column=0,sticky=tk.E+tk.W+tk.N+tk.S,padx=10,pady=10)
+
+########################################################## Tab Gridding Setup ##########################################################
 
 # Arrange Grid in Primary CAN tab
 pri_can.rowconfigure(0,weight=1)
@@ -73,13 +76,30 @@ def vin_button_func():
 ### ROW 1 ###
 
 def busload_calc_btn_func():
-    print("label removed")
     busload_progress_bar.grid(row=2,column=1)
-    print("progress bar added")
     busload_progress_bar.start()
-    if(time.monotonic() >= 60):
-        busload_progress_bar.grid_remove()
+    
+    busload_return_disp = tk.StringVar()
+    threading.Thread(target=busload_calculation, args=(busload_return_disp,)).start()
 
+    busload_calc_btn.wait_variable(busload_return_disp)
+
+    busload_progress_bar.grid_remove()
+
+    vehicle_pri_can_busload = int(busload_return_disp.get())
+
+    busload_value_label_text.set(str(vehicle_pri_can_busload) + ' %')
+
+def busload_calculation(var):
+    start_time = time.monotonic()
+    while(time.monotonic()-start_time < 30):
+        if ((time.monotonic() - start_time) % 5 == 0):
+            print(str(time.monotonic()) + ': 5 seconds elapsed')
+        elif (time.monotonic() - start_time >= 25):
+            break
+        else:
+            continue
+    var.set('50')
 
 ########################################################## Primary CAN Widgets SECTION ##########################################################
 
@@ -108,7 +128,9 @@ busload_label = tk.Label(pri_can,text='Busload (%): ', font = 'Helvetica 14 bold
 busload_label.grid(row=2,column=0,padx=5,pady=10,sticky='ns')
 
 # Busload Value Label
-busload_value_label = tk.Label(pri_can,text = str(vehicle_pri_can_busload) + ' %', font='Helvetica 14 bold')
+busload_value_label_text = tk.StringVar()
+busload_value_label_text.set(str(vehicle_pri_can_busload) + ' %')
+busload_value_label = tk.Label(pri_can,textvariable = busload_value_label_text, font='Helvetica 14 bold')
 busload_value_label.grid(row=2,column=1,padx=5,pady=10,sticky='ns')
 
 # Busload Calculation Progress Bar
