@@ -30,9 +30,11 @@ instr_label.grid(row=1,column=0, sticky='w')
 can_tab_control = ttk.Notebook(window)
 pri_can = ttk.Frame(can_tab_control)
 dinex_can = ttk.Frame(can_tab_control)
+e_stroke = ttk.Frame(can_tab_control)
 
 can_tab_control.add(pri_can, text = "Primary CAN")
 can_tab_control.add(dinex_can, text = "DINEX CAN")
+can_tab_control.add(e_stroke, text = "e-Stroke System Test")
 ## ADD NEW TABS HERE IF NEEDED ##
 window.grid_rowconfigure(2,weight=12)
 window.grid_columnconfigure(2,weight=1)
